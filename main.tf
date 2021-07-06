@@ -9,6 +9,10 @@
 # SECTION 1: CREATE NSG RULE
 # ---------------------------------------------------------------------------------------------------------------------
 
+terraform {
+  required_version = "= 0.11.13"
+}
+
 resource "null_resource" "depends_on" {
   triggers {
     depends_on = "${join("", var.depends_on)}"
@@ -50,7 +54,6 @@ resource "azurerm_network_interface" "vm-nic" {
   tags = "${var.tags}"
 }
 
-/*
 resource "azurerm_virtual_machine" "VM" {
   depends_on            = ["azurerm_network_interface.vm-nic"]
   count                 = "${length(var.windows_os_only_vm_definition)}"  
@@ -96,34 +99,3 @@ resource "azurerm_virtual_machine" "VM" {
   }
   tags = "${var.tags}"
 }
-
-*/
-
-/*
-resource "azurerm_virtual_machine_extension" "join-vm-to-domain" {
-  count                = "${length(var.domain_addition_list)}" 
-  name                 = "${format("%s-%s-%s-%s-%s",lookup(var.lorealregiontoregionnc,var.location),var.entity,"EXT",var.enviornment,lookup(var.domain_addition_list[count.index],"vmname"))}"
-  location             = "${var.location}"
-  resource_group_name  = "${var.resource_group}"
-  virtual_machine_name = "${lookup(var.domain_addition_list[count.index],"vmname")}"
-  publisher            = "Microsoft.Compute"
-  type                 = "JsonADDomainExtension"
-  type_handler_version = "1.0"
-  #"OUPath": "OU=06 Taiwan,OU=Accenture Managed,OU=HK,OU=Servers,OU=APAC,OU=Countries,DC=ap,DC=loreal,DC=intra",
-  settings = <<SETTINGS
-    {
-        "Name": "ap.loreal.intra",
-        "OUPath": "",
-        "User": "AP\\Narayan.ADMIN",
-        "Restart": "true",
-        "Options": "3"
-    }
-SETTINGS
-
-  protected_settings = <<PROTECTED_SETTINGS
-    {
-        "Password": "awscloud@140612"
-    }
-PROTECTED_SETTINGS
-}
-*/
