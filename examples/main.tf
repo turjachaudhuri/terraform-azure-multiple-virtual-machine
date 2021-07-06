@@ -1,21 +1,29 @@
-###############################
-## Terraform VNET deployment ##
-## ------------------------- ##
-##     PROJECT MANIFEST      ##
-###############################
+module "vnet" {
+  source = "../../modules/vnet" # Location of the module
 
-### Configurtion file is located in ./configuration-files directory
-### Configuartion file naming convention azure-<lorealregion>-<entity>.tfvars
+  app_identifier =  "${var.app_identifier}"
 
-### The comments for variable explanation are located in configuration file
+  lorealregiontoregionnc = "${var.lorealregiontoregionnc}"
+  lorealregiontoregion   = "${var.lorealregiontoregion}"
 
-### The credentials and subscriptions informations is defined with Azure CLI
-### More informations : https://www.terraform.io/docs/providers/azurerm/authenticating_via_azure_cli.html
+  entity         = "${var.entity}"
+  resource_group = "${azurerm_resource_group.rg.name}"
+  location       = "${var.location}"
+  enviornment    = "${var.enviornment}"
+  dns_map        = "${var.dns_map}"
+  # address space for the virtual network
+  vnet_definition = "${var.vnet_definition}"
 
-# ---------------------------------------------------------------------------------------------------------------------
-# SECTION 2: VNET DEPLOYMENT
-# ---------------------------------------------------------------------------------------------------------------------
+  # public subnets information
+  tags = "${var.tags}"
 
+  # private subnets information
+  public_subnet_definition      = "${var.public_subnet_definition}"
+  private_subnet_definition     = "${var.private_subnet_definition}"
+  gateway_subnet_definition     = "${var.gateway_subnet_definition}"
+
+  nsg_vm_vnet_list              = "${var.nsg_vm_vnet_list}"
+}
 
 resource "azurerm_availability_set" "vm-aset" {
   count                         = "${length(var.availability_set_definition)}"
@@ -26,6 +34,17 @@ resource "azurerm_availability_set" "vm-aset" {
   resource_group_name           = "${azurerm_resource_group.rg.name}"
   managed                       = "${lookup(var.availability_set_definition[count.index],"managed")}"
   tags                          = "${var.tags}"
+}
+
+resource "azurerm_public_ip" "public-ip" {
+  count                     = "${length(var.public_ip_list)}"
+  name                      = "${format("%s-%s-%s-%s-%s",lookup(var.lorealregiontoregionnc,var.location),var.entity,"PIP",var.enviornment,lookup(var.public_ip_list[count.index],"public_ip_identifier"))}"
+  location                  = "${var.location}"
+  resource_group_name       = "${azurerm_resource_group.rg.name}"
+  allocation_method         = "${lookup(var.public_ip_list[count.index],"public_ip_allocation_method")}"
+  sku                       = "${lookup(var.public_ip_list[count.index],"public_ip_sku")}"
+  ip_version                = "${lookup(var.public_ip_list[count.index],"public_ip_version")}"
+  tags                      = "${var.tags}"
 }
 
 resource "azurerm_storage_account" "storage-account" {
@@ -83,4 +102,3 @@ module "windowsVM" {
 
      depends_on = ["azurerm_storage_account.storage-account"]
 }
-
